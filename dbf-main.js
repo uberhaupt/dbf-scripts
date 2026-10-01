@@ -68,3 +68,43 @@
 /* ===================== arrow_roll_css_v1-1.0.0.js ===================== */
 (function(){if(document.getElementById('dbf-arrow-roll'))return;var S='.cases_card .icon_arrow-big,.available_card .icon_arrow-big{transition:transform .2s cubic-bezier(.33,1,.68,1)}@media (hover:hover){.cases_card:hover .icon_arrow-big,.available_card:hover .icon_arrow-big{transform:translateY(-100%)!important}}';var s=document.createElement('style');s.id='dbf-arrow-roll';s.textContent=S;(document.head||document.documentElement).appendChild(s);})();
 
+/* Stuurt een Webflow form-inzending PARALLEL door naar HubSpot.
+   v2: portal/GUID/regio komen uit data-attributen op het formulier zelf, niet uit de code,
+   zodat per pagina een ander HubSpot-formulier kan worden gekozen zonder release.
+     data-hs-form    verplicht  HubSpot form-GUID; zonder dit attribuut doet het script niets
+     data-hs-portal  optioneel  default 147279870
+     data-hs-region  optioneel  default eu1
+     data-hs-boat    optioneel  vult boat_interest; alleen meesturen als het veld op dat
+                                HubSpot-formulier bestaat, anders weigert HubSpot de inzending
+   Geen preventDefault: Webflow handelt opslaan, succesmelding en redirect zelf af. */
+(function(){
+var forms=document.querySelectorAll('form.form_form');if(!forms.length)return;
+function txt(f,sel){var el=f.querySelector(sel);return el?String(el.value||'').trim():'';}
+function nm(f){return txt(f,'input[name^="Name" i]');}
+function em(f){return txt(f,'input[type="email"],input[name^="Email" i]');}
+function co(f){return txt(f,'input[name^="Company" i]');}
+function ms(f){return txt(f,'textarea');}
+function ck(f){var el=f.querySelector('input[type="checkbox"]');return !!(el&&el.checked);}
+function F(n,v){return{objectTypeId:'0-1',name:n,value:v};}
+function hutk(){var m=document.cookie.match(/(?:^|;\s*)hubspotutk=([^;]+)/);return m?m[1]:'';}
+function valid(f){return nm(f).split(/\s+/).length>=2&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em(f))&&ms(f).length>=10&&ck(f);}
+Array.prototype.forEach.call(forms,function(f){
+var guid=f.getAttribute('data-hs-form');if(!guid)return;
+var portal=f.getAttribute('data-hs-portal')||'147279870';
+var region=f.getAttribute('data-hs-region')||'eu1';
+var host=region==='na1'?'api.hsforms.com':'api-'+region+'.hsforms.com';
+var ep='https://'+host+'/submissions/v3/integration/submit/'+portal+'/'+guid;
+f.addEventListener('submit',function(){
+if(!valid(f))return;
+var p=nm(f).split(/\s+/),first=p.shift(),last=p.join(' ');
+var fl=[F('firstname',first),F('lastname',last),F('email',em(f)),F('company',co(f)),F('message',ms(f))];
+var boat=(f.getAttribute('data-hs-boat')||'').trim();
+if(boat)fl.push(F('boat_interest',boat));
+var body={submittedAt:Date.now(),fields:fl,context:{pageUri:location.href,pageName:document.title},
+legalConsentOptions:{consent:{consentToProcess:true,text:'I agree with the privacy policy.'}}};
+var k=hutk();if(k)body.context.hutk=k;
+try{fetch(ep,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}catch(_){}
+});
+});
+})();
+
