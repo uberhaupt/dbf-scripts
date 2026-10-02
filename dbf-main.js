@@ -74,8 +74,11 @@
      data-hs-form    verplicht  HubSpot form-GUID; zonder dit attribuut doet het script niets
      data-hs-portal  optioneel  default 147279870
      data-hs-region  optioneel  default eu1
-     data-hs-boat    optioneel  vult boat_interest; alleen meesturen als het veld op dat
-                                HubSpot-formulier bestaat, anders weigert HubSpot de inzending
+     data-hs-product optioneel  vult product_interest met de itemnaam uit het CMS
+     data-hs-boat    optioneel  oude naam van data-hs-product; transitie-vangnet, mag later weg
+   Leesorde voor product_interest: aangevinkte radio (groep 'product') -> select ('product')
+   -> data-hs-product -> data-hs-boat. Het veld moet op dat HubSpot-formulier bestaan,
+   anders weigert HubSpot de HELE inzending.
    Geen preventDefault: Webflow handelt opslaan, succesmelding en redirect zelf af. */
 (function(){
 var forms=document.querySelectorAll('form.form_form');if(!forms.length)return;
@@ -85,6 +88,8 @@ function em(f){return txt(f,'input[type="email"],input[name^="Email" i]');}
 function co(f){return txt(f,'input[name^="Company" i]');}
 function ms(f){return txt(f,'textarea');}
 function ck(f){var el=f.querySelector('input[type="checkbox"]');return !!(el&&el.checked);}
+function rd(f){var el=f.querySelector('input[type="radio"][name^="product" i]:checked')||f.querySelector('input[type="radio"]:checked');return el?String(el.value||'').trim():'';}
+function sl(f){var el=f.querySelector('select[name^="product" i]')||f.querySelector('select');return el?String(el.value||'').trim():'';}
 function F(n,v){return{objectTypeId:'0-1',name:n,value:v};}
 function hutk(){var m=document.cookie.match(/(?:^|;\s*)hubspotutk=([^;]+)/);return m?m[1]:'';}
 function valid(f){return nm(f).split(/\s+/).length>=2&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em(f))&&ms(f).length>=10&&ck(f);}
@@ -98,8 +103,8 @@ f.addEventListener('submit',function(){
 if(!valid(f))return;
 var p=nm(f).split(/\s+/),first=p.shift(),last=p.join(' ');
 var fl=[F('firstname',first),F('lastname',last),F('email',em(f)),F('company',co(f)),F('message',ms(f))];
-var boat=(f.getAttribute('data-hs-boat')||'').trim();
-if(boat)fl.push(F('boat_interest',boat));
+var prod=rd(f)||sl(f)||(f.getAttribute('data-hs-product')||'').trim()||(f.getAttribute('data-hs-boat')||'').trim();
+if(prod)fl.push(F('product_interest',prod));
 var body={submittedAt:Date.now(),fields:fl,context:{pageUri:location.href,pageName:document.title},
 legalConsentOptions:{consent:{consentToProcess:true,text:'I agree with the privacy policy.'}}};
 var k=hutk();if(k)body.context.hutk=k;
