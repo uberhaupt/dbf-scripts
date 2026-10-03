@@ -1,0 +1,11 @@
+{
+  "name": "dbf-scripts",
+  "private": true,
+  "description": "Gebundelde custom scripts voor de Dutch Boat Factory Webflow-site",
+  "scripts": {
+    "test": "node test/bundle.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0"
+  }
+}

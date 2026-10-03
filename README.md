@@ -12,23 +12,59 @@ Vervangt de ~25 losse "registered inline scripts" in Webflow door 3 bestanden, g
 
 Elke module is een op zichzelf staande IIFE en activeert zich alleen waar zijn element bestaat, dus de site-brede bundels zijn veilig op elke pagina.
 
-## Laden in Webflow (jsDelivr)
-```html
-<!-- Site → Head -->
-<script src="https://cdn.jsdelivr.net/gh/uberhaupt/dbf-scripts@1.0.0/dbf-head.js"></script>
-<!-- Site → Footer -->
-<script src="https://cdn.jsdelivr.net/gh/uberhaupt/dbf-scripts@1.0.0/dbf-main.js"></script>
-<!-- Shop-pagina → Footer -->
-<script src="https://cdn.jsdelivr.net/gh/uberhaupt/dbf-scripts@1.0.0/dbf-shop.js"></script>
+## Laden in Webflow
+
+De bundels zitten **niet** als `<script src>` in de custom-code-secties. Ze zijn geregistreerd als
+*registered scripts* met een SRI-hash, via de Webflow Data API (app: **Webflow MCP Bridge App** —
+die app niet verwijderen, daaronder staan `dbfhead`, `dbfmain` en `dbfshop`).
+
+| Script-id | Toegepast op | Locatie |
+|---|---|---|
+| `dbfhead` | site-breed | header |
+| `dbfmain` | site-breed | footer |
+| `dbfshop` | alleen de Shop-pagina | footer |
+
+Omdat de SRI-hash aan precies die bytes hangt, verandert een push naar GitHub **niets** aan de live
+site. Elke wijziging vraagt een nieuwe versie. Dat is bewust: niemand kan de inhoud van een script
+onder de site vandaan wisselen.
+
+## Testen
+
+```bash
+npm install     # eenmalig, installeert jsdom
+npm test
 ```
 
-## Aanpassen & uitrollen
-1. Bewerk het betreffende `.js`-bestand.
-2. `git commit` + `git push`.
-3. **Nieuwe versie taggen** (`git tag v1.0.1 && git push origin v1.0.1`) — jsDelivr cachet versies onveranderlijk.
-4. De versie in de Webflow `<script src>`-URL ophogen (`@1.0.0` → `@1.0.1`), dan publishen.
+Laadt `dbf-main.js`, bouwt een neppagina in het geheugen en controleert of de modules nog doen wat
+ze horen te doen — formuliervalidatie, het gedrag van de videoknop en de veldnamen die de HubSpot-
+relay verstuurt. Draait in ongeveer een seconde.
 
-Alternatief zonder tag-bump: gebruik `@main` in de URL en purge na een push via `https://purge.jsdelivr.net/gh/uberhaupt/dbf-scripts@main/dbf-main.js`.
+Dit vervangt handmatig testen niet: er draait geen echte browser, dus opmaak, animaties en of
+YouTube daadwerkelijk afspeelt blijf je zelf bekijken. Het vangt wat je met het blote oog mist —
+dat een wijziging in de ene module er stilletjes een andere sloopt.
+
+Nieuwe module toegevoegd? Zet er een blok `check()`-regels bij in `test/bundle.test.js`.
+
+## Aanpassen & uitrollen
+
+1. Bewerk het betreffende `.js`-bestand.
+2. `npm test` — moet groen zijn.
+3. `git commit` + `git push`, en **tag de nieuwe versie** (`git tag v1.0.24 && git push origin --tags`).
+4. jsDelivr purgen en controleren dat er staat wat er moet staan:
+   ```bash
+   curl -s https://purge.jsdelivr.net/gh/uberhaupt/dbf-scripts@1.0.24/dbf-main.js -o /dev/null
+   curl -s -o /tmp/x.js -w '%{http_code}\n' https://cdn.jsdelivr.net/gh/uberhaupt/dbf-scripts@1.0.24/dbf-main.js
+   diff -q dbf-main.js /tmp/x.js
+   ```
+   **Controleer HTTP-status én inhoud voordat je verder gaat.** Bij een storing serveert jsDelivr een
+   foutpagina, en een hash daarover berekend maakt de site stuk.
+5. SRI-hash berekenen over het gecontroleerde bestand:
+   ```bash
+   echo "sha384-$(openssl dgst -sha384 -binary /tmp/x.js | openssl base64 -A)"
+   ```
+6. Nieuwe versie registreren en toepassen via de Data API (`register_hosted_script` +
+   `add_site_script`, of `add_page_script` voor `dbfshop`).
+7. **Publiceren doet de klant zelf.**
 
 ## Herkomst
 De modules komen 1-op-1 uit de Webflow registered scripts (backup in `~/Dropbox/CLAUDE/Dutch Boat Factory/scripts/`). Gedrag is identiek; alleen herordend.
