@@ -104,6 +104,12 @@ check('wegvegen duurt 0.8 s',                  src.includes('clip-path 0.8s cubi
 check('laag verdwijnt na 850 ms',              src.includes('startLenis();},850)'));
 check('wachten op video gecapt op 2500 ms',    src.includes('CAP=2500'));
 check('harde bovengrens op 5000 ms',           src.includes('HARDMAX=5000'));
+// De head-stylesheet zet .page-loading-layer op display:flex!important. Een gewone
+// inline display verliest daarvan, waardoor de laag als fixed element van het hele
+// scherm in de pagina bleef staan (onzichtbaar door clip-path, maar wel aanwezig
+// voor schermlezers en gevoelig voor elke latere wijziging aan die clip-path).
+check('verbergen gebeurt met !important',      src.includes("setProperty('display','none','important')"));
+check('niet meer de gewone inline display',   !src.includes("layer.style.display='none'"));
 
 console.log(fails ? `\n${fails} test(s) GEFAALD\n` : '\nAlles groen\n');
 process.exit(fails ? 1 : 0);
