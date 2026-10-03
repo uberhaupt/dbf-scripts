@@ -90,5 +90,20 @@ check('data-hs-boat is volledig weg',         !src.includes('data-hs-boat'));
 check('leest de aangevinkte radio',            src.includes('input[type="radio"][name^="product" i]:checked'));
 check('leest data-hs-product als terugval',    src.includes("getAttribute('data-hs-product')"));
 
+/* ------------------------------------------------------------------ *
+ * loading_progress_v13 — de laadlaag over de hero
+ * De tijden bepalen samen hoe lang een bezoeker naar de laag kijkt:
+ *   dur 1500 (teller) + 300 (pauze op 100%) + 800 (wegvegen) = 2,6 s
+ *   CAP 2500 = extra wachttijd op de video, gerekend vanaf het load-event
+ *   HARDMAX 5000 = bovengrens, vanaf het begin gerekend
+ * ------------------------------------------------------------------ */
+groep('loading_progress — timing');
+check('teller duurt 1500 ms',                  src.includes('var dur=1500,start=performance.now()'));
+check('pauze op 100% is 300 ms',               src.includes('setTimeout(finish,300)'));
+check('wegvegen duurt 0.8 s',                  src.includes('clip-path 0.8s cubic-bezier(0.76,0,0.24,1)'));
+check('laag verdwijnt na 850 ms',              src.includes('startLenis();},850)'));
+check('wachten op video gecapt op 2500 ms',    src.includes('CAP=2500'));
+check('harde bovengrens op 5000 ms',           src.includes('HARDMAX=5000'));
+
 console.log(fails ? `\n${fails} test(s) GEFAALD\n` : '\nAlles groen\n');
 process.exit(fails ? 1 : 0);
