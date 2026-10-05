@@ -92,14 +92,24 @@ check('leest data-hs-product als terugval',    src.includes("getAttribute('data-
 
 /* ------------------------------------------------------------------ *
  * loading_progress_v13 — de laadlaag over de hero
- * De tijden bepalen samen hoe lang een bezoeker naar de laag kijkt:
- *   dur 1500 (teller) + 300 (pauze op 100%) + 800 (wegvegen) = 2,6 s
+ * De transitie omhoog begint op een VASTE vloer van 2000 ms na
+ * navigationStart (performance.now() is al relatief aan timeOrigin).
+ * De teller eindigt TAIL ms daarvoor op 100%, dus dur rekent terug:
+ *   dur = go - start - TAIL, met een vloer MINCOUNT als het script laat komt.
+ * Daarna: 800 ms wegvegen, 850 ms tot display:none.
  *   CAP 2500 = extra wachttijd op de video, gerekend vanaf het load-event
- *   HARDMAX 5000 = bovengrens, vanaf het begin gerekend
+ *   HARDMAX 5000 = bovengrens, vanaf het scriptmoment gerekend
+ * De dubbele requestAnimationFrame is uit finish() gehaald: beginwaarde en
+ * transitie staan al bij init, zodat de 2000 ms niet ~32 ms uitloopt.
  * ------------------------------------------------------------------ */
 groep('loading_progress — timing');
-check('teller duurt 1500 ms',                  src.includes('var dur=1500,start=performance.now()'));
-check('pauze op 100% is 300 ms',               src.includes('setTimeout(finish,300)'));
+check('transitie start op vloer van 2000 ms',  src.includes('var GO=2000,'));
+check('teller heeft vloer van 700 ms',         src.includes('MINCOUNT=700'));
+check('pauze op 100% is 300 ms',               src.includes('TAIL=300'));
+check('teller rekent terug vanaf de vloer',    src.includes('dur=Math.max(300,go-start-TAIL)'));
+check('deadline is absoluut, niet relatief',   src.includes('setTimeout(finish,Math.max(0,go-performance.now()))'));
+check('beginwaarde clip-path staat bij init',  src.includes("layer.style.clipPath='inset(0 0 0% 0)';layer.style.transition="));
+check('finish() zet alleen de eindwaarde',     src.includes("function finish(){layer.style.clipPath='inset(0 0 100% 0)';"));
 check('wegvegen duurt 0.8 s',                  src.includes('clip-path 0.8s cubic-bezier(0.76,0,0.24,1)'));
 check('laag verdwijnt na 850 ms',              src.includes('startLenis();},850)'));
 check('wachten op video gecapt op 2500 ms',    src.includes('CAP=2500'));
