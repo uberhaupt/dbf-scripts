@@ -63,7 +63,10 @@ Nieuwe module toegevoegd? Zet er een blok `check()`-regels bij in `test/bundle.t
    echo "sha384-$(openssl dgst -sha384 -binary /tmp/x.js | openssl base64 -A)"
    ```
 6. Nieuwe versie registreren en toepassen via de Data API (`register_hosted_script` +
-   `add_site_script`, of `add_page_script` voor `dbfshop`).
+   `add_site_script`, of `add_page_script` voor `dbfshop`). Houd dezelfde `display_name`
+   (`dbfmain`, `dbfhead`, `dbfshop`): Webflow hangt de nieuwe versie dan onder hetzelfde
+   script-id. Gebruik **niet** `update_registered_script` om een versie toe te voegen — dat
+   geeft een 404.
 7. **Publiceren doet de klant zelf.**
 
 ## Herkomst
