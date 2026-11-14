@@ -70,4 +70,4 @@ Nieuwe module toegevoegd? Zet er een blok `check()`-regels bij in `test/bundle.t
 7. **Publiceren doet de klant zelf.**
 
 ## Herkomst
-De modules komen 1-op-1 uit de Webflow registered scripts (backup in `~/Dropbox/CLAUDE/Dutch Boat Factory/scripts/`). Gedrag is identiek; alleen herordend.
+De modules komen 1-op-1 uit de Webflow registered scripts (backup in `~/Dropbox/CLAUDE/Dutch Boat Factory/backup-2026-06-25/scripts/`). Gedrag is identiek; alleen herordend.
